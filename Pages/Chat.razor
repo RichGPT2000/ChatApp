@@ -50,9 +50,22 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        await EnsureHubAsync();
-        await JoinGroupIfNeededAsync(ChatId);
+        // Load data on parameter change
         await Load();
+        // If hub already exists (after first render), ensure group membership reflects new ChatId
+        if (hub is not null)
+        {
+            await JoinGroupIfNeededAsync(ChatId);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await EnsureHubAsync();
+            await JoinGroupIfNeededAsync(ChatId);
+        }
     }
 
     async Task EnsureHubAsync()
@@ -63,18 +76,30 @@ else
             .WithAutomaticReconnect()
             .Build();
 
-        hub.On<int>("MessageAdded", async (changedChatId) =>
+        hub.On<ChatApp.Models.MessageDto>("MessageAdded", (dto) =>
         {
-            if (changedChatId == ChatId)
+            if (dto.ChatId == ChatId)
             {
-                await Load();
-                StateHasChanged();
+                _ = InvokeAsync(() =>
+                {
+                    if (!messages.Any(m => m.Id == dto.Id))
+                    {
+                        messages.Add(new ChatApp.Models.Message
+                        {
+                            Id = dto.Id,
+                            ChatId = dto.ChatId,
+                            Sender = dto.Sender,
+                            Text = dto.Text,
+                            SentAtUtc = dto.SentAtUtc
+                        });
+                    }
+                    StateHasChanged();
+                });
             }
         });
 
         hub.Reconnected += async _ =>
         {
-            // rejoin current chat after reconnect
             if (currentJoinedChatId.HasValue)
             {
                 try { await hub.InvokeAsync("JoinChat", currentJoinedChatId.Value); } catch { }
@@ -94,16 +119,16 @@ else
 
         if (currentJoinedChatId.HasValue)
         {
-            try { await hub.InvokeAsync("LeaveChat", currentJoinedChatId.Value); } catch { }
+            try { await hub.SendAsync("LeaveChat", currentJoinedChatId.Value); } catch { }
         }
         try
         {
-            await hub.InvokeAsync("JoinChat", chatId);
+            await hub.SendAsync("JoinChat", chatId);
             currentJoinedChatId = chatId;
         }
         catch
         {
-            // swallow for now, UI can show banner if needed
+            // swallow for now
         }
     }
 
@@ -123,8 +148,7 @@ else
         if (string.IsNullOrWhiteSpace(draftText)) return;
         await ChatSvc.SendMessageAsync(ChatId, draftSender, draftText);
         draftText = "";
-        // helyben is tölthetünk azonnal
-        await Load();
+        // rely on SignalR event to update both local and remote clients
     }
 
     void OnKeyDown(KeyboardEventArgs e)
@@ -141,7 +165,7 @@ else
         {
             if (currentJoinedChatId.HasValue)
             {
-                try { await hub.InvokeAsync("LeaveChat", currentJoinedChatId.Value); } catch { }
+                try { await hub.SendAsync("LeaveChat", currentJoinedChatId.Value); } catch { }
             }
             await hub.DisposeAsync();
         }

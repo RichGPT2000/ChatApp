@@ -73,8 +73,18 @@ public class ChatService
         db.Messages.Add(msg);
         await db.SaveChangesAsync(ct);
 
-        // notify only clients in this chat's group
-        await _hub.Clients.Group(chatId.ToString()).SendAsync("MessageAdded", chatId, cancellationToken: ct);
+        // Build DTO to broadcast
+        var dto = new ChatApp.Models.MessageDto
+        {
+            Id = msg.Id,
+            ChatId = msg.ChatId,
+            Sender = msg.Sender,
+            Text = msg.Text,
+            SentAtUtc = msg.SentAtUtc
+        };
+
+        // notify only clients in this chat's group with message payload
+        await _hub.Clients.Group(chatId.ToString()).SendAsync("MessageAdded", dto, cancellationToken: ct);
         return msg.Id;
     }
 }
