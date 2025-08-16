@@ -1,0 +1,15 @@
+@inherits LayoutComponentBase
+<div style="display:flex; gap:1rem;">
+    <nav style="min-width:200px;">
+        <h3>Menü</h3>
+        <ul>
+            <li><NavLink href="/">Kezdőlap</NavLink></li>
+            <li><NavLink href="/chats">Chatek</NavLink></li>
+        </ul>
+        <hr />
+        <small>Blazor Server + SQLite</small>
+    </nav>
+    <main style="flex:1;">
+        @Body
+    </main>
+</div>

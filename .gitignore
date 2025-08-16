@@ -1,0 +1,36 @@
+# Visual Studio / .NET
+.vs/
+*.user
+*.suo
+*.cache
+*.log
+
+# Build outputs
+bin/
+obj/
+Debug/
+Release/
+out/
+
+# OS/editor
+*.swp
+*.tmp
+Thumbs.db
+.DS_Store
+
+# Packages
+*.nupkg
+.nuget/
+
+# EF / SQLite / local DBs
+*.db
+*.sqlite
+*.sqlite3
+chatapp.db
+
+# Resharper/other IDEs
+_ReSharper*/
+*.DotSettings.user
+
+# Rider
+.idea/

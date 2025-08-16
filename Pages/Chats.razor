@@ -1,0 +1,82 @@
+@page "/chats"
+@inject ChatApp.Services.ChatService ChatsSvc
+@inject NavigationManager Nav
+
+<h1>Chatek</h1>
+
+@if (loading)
+{
+    <p>Betöltés…</p>
+}
+else
+{
+    <div style="margin:1rem 0;">
+        <input @bind="newTitle" placeholder="Új chat címe" />
+        <button @onclick="CreateChat">Hozzáadás</button>
+    </div>
+
+    <ul>
+        @foreach (var c in chats)
+        {
+            <li>
+                <a href="@($"/chat/{c.Id}")">@c.Title</a>
+                <button @onclick="() => DeleteChat(c.Id)" style="margin-left:0.5rem;">Törlés</button>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    List<ChatApp.Models.Chat> chats = new();
+    bool loading = true;
+    string newTitle = "";
+
+    private HubConnection? hub;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+        hub = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/chathub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hub.On("ChatListChanged", async () =>
+        {
+            await Load();
+            StateHasChanged();
+        });
+
+        await hub.StartAsync();
+    }
+
+    async Task Load()
+    {
+        loading = true;
+        chats = await ChatsSvc.GetChatsAsync();
+        loading = false;
+    }
+
+    async Task CreateChat()
+    {
+        if (string.IsNullOrWhiteSpace(newTitle)) return;
+        await ChatsSvc.CreateChatAsync(newTitle);
+        newTitle = "";
+        // a lista frissül a hub jelzésére is, de itt is tölthetünk azonnal
+        await Load();
+    }
+
+    async Task DeleteChat(int id)
+    {
+        await ChatsSvc.DeleteChatAsync(id);
+        await Load();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hub is not null)
+        {
+            await hub.DisposeAsync();
+        }
+    }
+}

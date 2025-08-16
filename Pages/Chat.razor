@@ -1,0 +1,111 @@
+@page "/chat/{ChatId:int}"
+@inject ChatApp.Services.ChatService ChatSvc
+@inject NavigationManager Nav
+
+<h1>@title</h1>
+
+@if (loading)
+{
+    <p>Betöltés…</p>
+}
+else if (notFound)
+{
+    <p style="color:#b00020;">Nincs ilyen chat.</p>
+}
+else
+{
+    <div style="margin:1rem 0; display:flex; gap:0.5rem;">
+        <input style="width:12rem;" @bind="draftSender" placeholder="Feladó" />
+        <input style="flex:1;" @bind="draftText" placeholder="Üzenet…" @onkeydown="OnKeyDown" />
+        <button @onclick="SendMessage">Küldés</button>
+    </div>
+
+    <ul>
+        @foreach (var m in messages)
+        {
+            <li style="margin-bottom:0.5rem;">
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>@m.Sender</strong>
+                    <small>@m.SentAtUtc.ToLocalTime().ToString("yyyy.MM.dd HH:mm")</small>
+                </div>
+                <div>@m.Text</div>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter] public int ChatId { get; set; }
+
+    string title = "Chat";
+    bool loading = true;
+    bool notFound = false;
+
+    List<ChatApp.Models.Message> messages = new();
+    string draftSender = "User";
+    string draftText = "";
+
+    private HubConnection? hub;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Load();
+        await EnsureHubAsync();
+    }
+
+    async Task EnsureHubAsync()
+    {
+        if (hub is not null) return;
+        hub = new HubConnectionBuilder()
+            .WithUrl(Nav.ToAbsoluteUri("/chathub"))
+            .WithAutomaticReconnect()
+            .Build();
+
+        hub.On<int>("MessageAdded", async (changedChatId) =>
+        {
+            if (changedChatId == ChatId)
+            {
+                await Load();
+                StateHasChanged();
+            }
+        });
+
+        await hub.StartAsync();
+    }
+
+    async Task Load()
+    {
+        loading = true;
+        var chat = await ChatSvc.GetChatAsync(ChatId);
+        if (chat is null) { notFound = true; loading = false; return; }
+        title = chat.Title;
+
+        messages = await ChatSvc.GetMessagesAsync(ChatId);
+        loading = false;
+    }
+
+    async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(draftText)) return;
+        await ChatSvc.SendMessageAsync(ChatId, draftSender, draftText);
+        draftText = "";
+        // A több klienst a hub értesíti; helyben is tölthetünk azonnal
+        await Load();
+    }
+
+    void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            _ = SendMessage();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hub is not null)
+        {
+            await hub.DisposeAsync();
+        }
+    }
+}
