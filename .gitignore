@@ -27,6 +27,8 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 chatapp.db
+*.db-shm
+*.db-wal
 
 # Resharper/other IDEs
 _ReSharper*/
