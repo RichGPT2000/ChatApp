@@ -1,9 +1,28 @@
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 
 namespace ChatApp.Hubs;
 
 public class ChatHub : Hub
 {
-    // Optionally expose methods if you want clients to send via hub.
-    // For this app, the server broadcasts via IHubContext after DB ops.
+    private readonly ILogger<ChatHub> _logger;
+
+    public ChatHub(ILogger<ChatHub> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task JoinChat(int chatId)
+    {
+        var group = chatId.ToString();
+        await Groups.AddToGroupAsync(Context.ConnectionId, group);
+        _logger.LogInformation("Connection {ConnectionId} joined chat group {Group}", Context.ConnectionId, group);
+    }
+
+    public async Task LeaveChat(int chatId)
+    {
+        var group = chatId.ToString();
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, group);
+        _logger.LogInformation("Connection {ConnectionId} left chat group {Group}", Context.ConnectionId, group);
+    }
 }

@@ -57,6 +57,25 @@ The app will print the listening URL (typically https://localhost:xxxx). Open it
 - Real-time
   - Clients connect to `/chathub`. Pages subscribe to relevant events and reload their data.
 
+### SignalR Groups
+- Each chat uses a SignalR group named by its `chatId` (e.g., `"42"`).
+- Clients join the group when they open a chat and leave it when navigating away.
+- On reconnect, the client automatically rejoins the previously joined chat group(s).
+- Server only broadcasts chat-scoped events to the relevant group using:
+  ```csharp
+  await Clients.Group(chatId.ToString()).SendAsync("MessageAdded", chatId, ct);
+  ```
+
+### Scale-out
+- For multiple server instances, add a backplane so groups and messages are synchronized across nodes, e.g. Redis:
+  ```csharp
+  builder.Services
+      .AddSignalR()
+      // .AddStackExchangeRedis("localhost:6379");
+      ;
+  ```
+  Alternatively, use Azure SignalR Service.
+
 ## Project Structure (key)
 ```
 Data/           AppDbContext.cs
