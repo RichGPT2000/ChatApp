@@ -87,4 +87,17 @@ public class ChatService
         await _hub.Clients.Group(chatId.ToString()).SendAsync("MessageAdded", dto, cancellationToken: ct);
         return msg.Id;
     }
+
+    // New: delete a message and notify clients in the chat group
+    public async Task DeleteMessageAsync(int chatId, int messageId, CancellationToken ct = default)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync(ct);
+        var msg = await db.Messages.FirstOrDefaultAsync(m => m.Id == messageId && m.ChatId == chatId, ct);
+        if (msg is null) return;
+
+        db.Messages.Remove(msg);
+        await db.SaveChangesAsync(ct);
+
+        await _hub.Clients.Group(chatId.ToString()).SendAsync("MessageRemoved", chatId, messageId, cancellationToken: ct);
+    }
 }

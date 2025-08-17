@@ -37,11 +37,16 @@ else
         @foreach (var m in messages)
         {
             <li style="margin-bottom:0.5rem;">
-                <div style="display:flex; justify-content:space-between;">
-                    <strong>@m.Sender</strong>
-                    <small>@m.SentAtUtc.ToLocalTime().ToString("yyyy.MM.dd HH:mm")</small>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <strong>@m.Sender</strong>
+                            <small>@m.SentAtUtc.ToLocalTime().ToString("yyyy.MM.dd HH:mm")</small>
+                        </div>
+                        <div>@m.Text</div>
+                    </div>
+                    <button @onclick="(() => OnDeleteMessage(m.Id))" title="Törlés">🗑️</button>
                 </div>
-                <div>@m.Text</div>
             </li>
         }
     </ul>
@@ -127,6 +132,23 @@ else
             }
         });
 
+        // New: handle removals
+        hub.On<int, int>("MessageRemoved", (chatId, messageId) =>
+        {
+            if (chatId == ChatId)
+            {
+                _ = InvokeAsync(() =>
+                {
+                    var idx = messages.FindIndex(x => x.Id == messageId);
+                    if (idx >= 0)
+                    {
+                        messages.RemoveAt(idx);
+                        StateHasChanged();
+                    }
+                });
+            }
+        });
+
         hub.Reconnected += async _ =>
         {
             if (currentJoinedChatId.HasValue)
@@ -178,6 +200,13 @@ else
         await ChatSvc.SendMessageAsync(ChatId, draftSender, draftText);
         draftText = "";
         // rely on SignalR event to update both local and remote clients
+    }
+
+    // New: delete message handler
+    async Task OnDeleteMessage(int messageId)
+    {
+        await ChatSvc.DeleteMessageAsync(ChatId, messageId);
+        // immediate UI update happens via SignalR MessageRemoved event
     }
 
     public async ValueTask DisposeAsync()
