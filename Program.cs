@@ -1,5 +1,7 @@
 using ChatApp.Data;
 using Microsoft.EntityFrameworkCore;
+using ChatApp.Services;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,14 +16,20 @@ builder.Services.AddDbContextFactory<AppDbContext>(opt =>
     opt.UseSqlite(cs);
 });
 
+// Version info provider (singleton, collected once at startup)
+builder.Services.AddSingleton<IVersionInfoProvider, VersionInfoProvider>();
+
 var app = builder.Build();
 
-// Create DB schema if missing
+// Create DB schema if missing and initialize version provider
 using (var scope = app.Services.CreateScope())
 {
     var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
     await using var db = await factory.CreateDbContextAsync();
     await db.Database.EnsureCreatedAsync();
+
+    var vprov = scope.ServiceProvider.GetRequiredService<IVersionInfoProvider>();
+    await vprov.InitializeAsync();
 }
 
 if (!app.Environment.IsDevelopment())
@@ -33,6 +41,12 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+// Diagnostics endpoint
+app.MapGet("/version", (IVersionInfoProvider v) =>
+{
+    return Results.Json(v.Current, new JsonSerializerOptions { WriteIndented = true });
+});
 
 app.MapBlazorHub();
 app.MapHub<ChatApp.Hubs.ChatHub>("/chathub");

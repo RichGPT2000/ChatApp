@@ -66,6 +66,25 @@ The app will print the listening URL (typically https://localhost:xxxx). Open it
   await Clients.Group(chatId.ToString()).SendAsync("MessageAdded", chatId, ct);
   ```
 
+### Diagnostics: Version panel and /version
+- The left sidebar shows app/runtime/DB details.
+- JSON endpoint `/version` returns the same fields, e.g.:
+  ```json
+  {
+    "AppVersion": "1.0.0",
+    "FileVersion": "1.0.0.0",
+    "Commit": "a1b2c3d",
+    "RuntimeVersion": "8.0.7",
+    "OSDescription": "Microsoft Windows 10.0.19045",
+    "ProcessArchitecture": "X64",
+    "EnvironmentName": "Production",
+    "EFProvider": "Microsoft.EntityFrameworkCore.Sqlite",
+    "LatestMigration": null,
+    "AppliedMigrations": 0,
+    "SqliteVersion": "3.45.2"
+  }
+  ```
+
 ### Scale-out
 - For multiple server instances, add a backplane so groups and messages are synchronized across nodes, e.g. Redis:
   ```csharp
