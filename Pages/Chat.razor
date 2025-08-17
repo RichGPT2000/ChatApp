@@ -14,11 +14,24 @@ else if (notFound)
 }
 else
 {
+<form @onsubmit="OnSendSubmit" @onsubmit:preventDefault>
     <div style="margin:1rem 0; display:flex; gap:0.5rem;">
-        <input style="width:12rem;" @bind="draftSender" placeholder="Feladó" />
-        <input style="flex:1;" @bind="draftText" placeholder="Üzenet…" @onkeydown="OnKeyDown" />
-        <button @onclick="SendMessage">Küldés</button>
+        <input style="width:12rem;"
+               @bind="draftSender"
+               @bind:event="oninput"
+               placeholder="Feladó" />
+
+        <input style="flex:1;"
+               @bind="draftText"
+               @bind:event="oninput"
+               placeholder="Üzenet…"
+               @ref="messageInput" />
+
+        <button type="submit" disabled="@(_sending || string.IsNullOrWhiteSpace(draftText))">
+            Küldés
+        </button>
     </div>
+</form>
 
     <ul>
         @foreach (var m in messages)
@@ -47,6 +60,22 @@ else
 
     private HubConnection? hub;
     private int? currentJoinedChatId;
+    private ElementReference messageInput;
+    private bool _sending;
+
+    private async Task OnSendSubmit()
+    {
+        if (_sending) return;
+        if (string.IsNullOrWhiteSpace(draftText)) return;
+
+        _sending = true;
+        try
+        {
+            await SendMessage();
+            await messageInput.FocusAsync();
+        }
+        finally { _sending = false; }
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -149,14 +178,6 @@ else
         await ChatSvc.SendMessageAsync(ChatId, draftSender, draftText);
         draftText = "";
         // rely on SignalR event to update both local and remote clients
-    }
-
-    void OnKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter")
-        {
-            _ = SendMessage();
-        }
     }
 
     public async ValueTask DisposeAsync()
