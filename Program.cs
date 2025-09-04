@@ -16,7 +16,14 @@ builder.Services.AddDbContextFactory<AppDbContext>(opt =>
     opt.UseSqlite(cs);
 });
 
-// Version info provider (singleton, collected once at startup)
+// System info abstractions
+builder.Services.AddSingleton<IAssemblyInfoProvider, AssemblyInfoProvider>();
+builder.Services.AddSingleton<IRuntimeInfoProvider, RuntimeInfoProvider>();
+builder.Services.AddSingleton<IEnvironmentReader, EnvironmentReader>();
+builder.Services.AddSingleton<ICommitProvider, CommitProvider>();
+
+// EF diagnostics + version provider
+builder.Services.AddSingleton<IEFDiagnosticsProvider, EFDiagnosticsProvider>();
 builder.Services.AddSingleton<IVersionInfoProvider, VersionInfoProvider>();
 
 var app = builder.Build();
@@ -29,7 +36,7 @@ using (var scope = app.Services.CreateScope())
     await db.Database.EnsureCreatedAsync();
 
     var vprov = scope.ServiceProvider.GetRequiredService<IVersionInfoProvider>();
-    await vprov.InitializeAsync();
+    await vprov.GetOrCreateAsync();
 }
 
 if (!app.Environment.IsDevelopment())
