@@ -29,76 +29,67 @@ public interface IVersionInfoProvider
 {
     VersionInfo? Current { get; }
     Task InitializeAsync(CancellationToken ct = default);
+    Task<VersionInfo> GetOrCreateAsync(CancellationToken ct = default);
+    Task<VersionInfo> RefreshAsync(CancellationToken ct = default);
 }
 
 public class VersionInfoProvider : IVersionInfoProvider
 {
-    private readonly IServiceProvider _sp;
-    private readonly IConfiguration _cfg;
+    private readonly IAssemblyInfoProvider _asm;
+    private readonly IRuntimeInfoProvider _runtime;
     private readonly IWebHostEnvironment _env;
+    private readonly IEFDiagnosticsProvider _ef;
+    private readonly ICommitProvider _commit;
     private readonly ILogger<VersionInfoProvider> _logger;
 
-    public VersionInfoProvider(IServiceProvider sp, IConfiguration cfg, IWebHostEnvironment env, ILogger<VersionInfoProvider> logger)
+    public VersionInfoProvider(IAssemblyInfoProvider asm,
+        IRuntimeInfoProvider runtime,
+        IWebHostEnvironment env,
+        IEFDiagnosticsProvider ef,
+        ICommitProvider commit,
+        ILogger<VersionInfoProvider> logger)
     {
-        _sp = sp; _cfg = cfg; _env = env; _logger = logger;
+        _asm = asm; _runtime = runtime; _env = env; _ef = ef; _commit = commit; _logger = logger;
     }
 
     public VersionInfo? Current { get; private set; }
 
     public async Task InitializeAsync(CancellationToken ct = default)
     {
-        if (Current is not null) return;
+        // Backwards compatibility
+        await GetOrCreateAsync(ct);
+    }
 
-        var asm = typeof(Program).Assembly;
-        var informational = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "";
-        var file = asm.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version ?? "";
+    public async Task<VersionInfo> GetOrCreateAsync(CancellationToken ct = default)
+    {
+        if (Current is not null) return Current;
+        return Current = await BuildAsync(ct);
+    }
 
-        var commit = _cfg["Build:Commit"] ?? Environment.GetEnvironmentVariable("GIT_COMMIT");
-        if (!string.IsNullOrEmpty(commit) && commit.Length > 7) commit = commit[..7];
+    public async Task<VersionInfo> RefreshAsync(CancellationToken ct = default)
+    {
+        Current = await BuildAsync(ct);
+        return Current;
+    }
 
-        var runtime = Environment.Version.ToString();
-        var os = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
-        var arch = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString();
-
-        string provider = ""; string? latestMigration = null; int appliedCount = 0; string? sqliteVer = null;
-        try
+    private async Task<VersionInfo> BuildAsync(CancellationToken ct)
+    {
+        EfDiagnostics efdiag = await _ef.CollectAsync(ct);
+        var vi = new VersionInfo
         {
-            using var scope = _sp.CreateScope();
-            var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<Data.AppDbContext>>();
-            await using var db = await factory.CreateDbContextAsync(ct);
-            provider = db.Database.ProviderName ?? "";
-            var migrations = (await db.Database.GetAppliedMigrationsAsync(ct)).ToList();
-            appliedCount = migrations.Count;
-            latestMigration = migrations.LastOrDefault();
-
-            try
-            {
-                var list = await db.Database.SqlQueryRaw<string>("select sqlite_version() as v").ToListAsync(ct);
-                sqliteVer = list.FirstOrDefault();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Failed to query sqlite_version()");
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to collect EF/SQLite diagnostics");
-        }
-
-        Current = new VersionInfo
-        {
-            AppVersion = informational,
-            FileVersion = file,
-            Commit = commit,
-            RuntimeVersion = runtime,
-            OSDescription = os,
-            ProcessArchitecture = arch,
+            AppVersion = _asm.GetInformationalVersion(),
+            FileVersion = _asm.GetFileVersion(),
+            Commit = _commit.GetShortCommit(),
+            RuntimeVersion = _runtime.GetRuntimeVersion(),
+            OSDescription = _runtime.GetOSDescription(),
+            ProcessArchitecture = _runtime.GetProcessArchitecture(),
             EnvironmentName = _env.EnvironmentName,
-            EFProvider = provider,
-            LatestMigration = latestMigration,
-            AppliedMigrations = appliedCount,
-            SqliteVersion = sqliteVer
+            EFProvider = efdiag.Provider,
+            LatestMigration = efdiag.LatestMigration,
+            AppliedMigrations = efdiag.AppliedCount,
+            SqliteVersion = efdiag.SqliteVersion
         };
+        _logger.LogDebug("VersionInfo built: {@VersionInfo}", vi);
+        return vi;
     }
 }
