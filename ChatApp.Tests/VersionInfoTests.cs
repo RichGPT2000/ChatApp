@@ -1,6 +1,7 @@
 using ChatApp.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.FileProviders;
 using Xunit;
 
 namespace ChatApp.Tests;
@@ -109,10 +110,10 @@ public class VersionInfoTests
     private class FakeHostEnv : Microsoft.AspNetCore.Hosting.IWebHostEnvironment
     {
         public string ApplicationName { get; set; } = "TestApp";
-        public IFileProvider WebRootFileProvider { get; set; } = new Microsoft.Extensions.FileProviders.NullFileProvider();
+        public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
         public string WebRootPath { get; set; } = string.Empty;
         public string EnvironmentName { get; set; } = "TestEnv";
         public string ContentRootPath { get; set; } = string.Empty;
-        public IFileProvider ContentRootFileProvider { get; set; } = new Microsoft.Extensions.FileProviders.NullFileProvider();
+        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 }
