@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace ChatApp.Services;
+namespace ChatApp.Core.Services;
 
 public record EfDiagnostics(string Provider, string? LatestMigration, int AppliedCount, string? SqliteVersion);
 

@@ -1,10 +1,10 @@
-using ChatApp.Data;
-using ChatApp.Models;
-using ChatApp.Hubs;
+using ChatApp.Core.Data;
+using ChatApp.Core.Models;
+using ChatApp.Core.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
-namespace ChatApp.Services;
+namespace ChatApp.Core.Services;
 
 public class ChatService
 {
@@ -74,7 +74,7 @@ public class ChatService
         await db.SaveChangesAsync(ct);
 
         // Build DTO to broadcast
-        var dto = new ChatApp.Models.MessageDto
+        var dto = new ChatApp.Core.Models.MessageDto
         {
             Id = msg.Id,
             ChatId = msg.ChatId,

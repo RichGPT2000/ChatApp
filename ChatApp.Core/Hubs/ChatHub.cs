@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
-namespace ChatApp.Hubs;
+namespace ChatApp.Core.Hubs;
 
 public class ChatHub : Hub
 {

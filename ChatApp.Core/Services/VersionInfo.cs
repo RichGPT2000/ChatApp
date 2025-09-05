@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting;
 
-namespace ChatApp.Services;
+namespace ChatApp.Core.Services;
 
 public class VersionInfo
 {

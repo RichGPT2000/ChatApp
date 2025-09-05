@@ -1,4 +1,4 @@
-using ChatApp.Services;
+using ChatApp.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;

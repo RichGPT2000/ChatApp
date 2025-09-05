@@ -1,5 +1,5 @@
-using ChatApp.Data;
-using ChatApp.Services;
+using ChatApp.Core.Data;
+using ChatApp.Core.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;

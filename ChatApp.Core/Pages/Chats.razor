@@ -1,5 +1,5 @@
 @page "/chats"
-@inject ChatApp.Services.ChatService ChatsSvc
+@inject ChatApp.Core.Services.ChatService ChatsSvc
 @inject NavigationManager Nav
 
 <h1>Chatek</h1>
@@ -27,7 +27,7 @@ else
 }
 
 @code {
-    List<ChatApp.Models.Chat> chats = new();
+    List<ChatApp.Core.Models.Chat> chats = new();
     bool loading = true;
     string newTitle = "";
 

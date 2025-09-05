@@ -1,6 +1,6 @@
-using ChatApp.Data;
+using ChatApp.Core.Data;
 using Microsoft.EntityFrameworkCore;
-using ChatApp.Services;
+using ChatApp.Core.Services;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
-builder.Services.AddScoped<ChatApp.Services.ChatService>();
+builder.Services.AddScoped<ChatApp.Core.Services.ChatService>();
 
 builder.Services.AddDbContextFactory<AppDbContext>(opt =>
 {
@@ -56,7 +56,7 @@ app.MapGet("/version", (IVersionInfoProvider v) =>
 });
 
 app.MapBlazorHub();
-app.MapHub<ChatApp.Hubs.ChatHub>("/chathub");
+app.MapHub<ChatApp.Core.Hubs.ChatHub>("/chathub");
 app.MapFallbackToPage("/_Host");
 
 app.Run();

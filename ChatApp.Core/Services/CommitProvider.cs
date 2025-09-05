@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace ChatApp.Services;
+namespace ChatApp.Core.Services;
 
 public interface ICommitProvider
 {

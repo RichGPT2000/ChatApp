@@ -1,5 +1,5 @@
 @page "/chat/{ChatId:int}"
-@inject ChatApp.Services.ChatService ChatSvc
+@inject ChatApp.Core.Services.ChatService ChatSvc
 @inject NavigationManager Nav
 
 <h1>@title</h1>
@@ -59,7 +59,7 @@ else
     bool loading = true;
     bool notFound = false;
 
-    List<ChatApp.Models.Message> messages = new();
+    List<ChatApp.Core.Models.Message> messages = new();
     string draftSender = "User";
     string draftText = "";
 
@@ -110,7 +110,7 @@ else
             .WithAutomaticReconnect()
             .Build();
 
-        hub.On<ChatApp.Models.MessageDto>("MessageAdded", (dto) =>
+        hub.On<ChatApp.Core.Models.MessageDto>("MessageAdded", (dto) =>
         {
             if (dto.ChatId == ChatId)
             {
@@ -118,7 +118,7 @@ else
                 {
                     if (!messages.Any(m => m.Id == dto.Id))
                     {
-                        messages.Add(new ChatApp.Models.Message
+                        messages.Add(new ChatApp.Core.Models.Message
                         {
                             Id = dto.Id,
                             ChatId = dto.ChatId,

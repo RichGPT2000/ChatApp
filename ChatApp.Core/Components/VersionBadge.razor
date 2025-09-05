@@ -1,5 +1,5 @@
-@namespace ChatApp
-@inject ChatApp.Services.IVersionInfoProvider V
+@namespace ChatApp.Core
+@inject ChatApp.Core.Services.IVersionInfoProvider V
 
 @if (info is null)
 {
@@ -16,7 +16,7 @@ else
 }
 
 @code {
-    private ChatApp.Services.VersionInfo? info;
+    private ChatApp.Core.Services.VersionInfo? info;
 
     protected override Task OnInitializedAsync()
     {
