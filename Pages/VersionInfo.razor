@@ -1,0 +1,43 @@
+@page "/versioninfo"
+@inject ChatApp.Services.IVersionInfoProvider V
+
+<PageTitle>Version Info</PageTitle>
+
+<h3>Application Version Information</h3>
+
+@if (_info is null)
+{
+    <p><em>Loading…</em></p>
+}
+else
+{
+    <table class="table table-sm w-auto">
+        <tbody>
+            <tr><th>App Version</th><td>@_info.AppVersion</td></tr>
+            <tr><th>File Version</th><td>@_info.FileVersion</td></tr>
+            <tr><th>Commit</th><td>@(_info.Commit ?? "-")</td></tr>
+            <tr><th>.NET Runtime</th><td>@_info.RuntimeVersion</td></tr>
+            <tr><th>Process Arch</th><td>@_info.ProcessArchitecture</td></tr>
+            <tr><th>Environment</th><td>@_info.EnvironmentName</td></tr>
+            <tr><th>EF Provider</th><td>@_info.EFProvider</td></tr>
+            <tr><th>Applied Migrations</th><td>@_info.AppliedMigrations</td></tr>
+            <tr><th>Latest Migration</th><td>@(_info.LatestMigration ?? "-")</td></tr>
+            <tr><th>SQLite Version</th><td>@(_info.SqliteVersion ?? "-")</td></tr>
+            <tr><th>OS</th><td>@_info.OSDescription</td></tr>
+        </tbody>
+    </table>
+
+    <p>
+        Raw JSON: <a href="/version" target="_blank" rel="noopener">/version</a> |
+        Database: <a href="/status">/status</a>
+    </p>
+}
+
+@code {
+    private ChatApp.Services.VersionInfo? _info;
+    protected override Task OnInitializedAsync()
+    {
+        _info = V.Current; // already initialized
+        return Task.CompletedTask;
+    }
+}

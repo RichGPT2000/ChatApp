@@ -11,7 +11,7 @@ else
         <div>Blazor Server • SQLite</div>
         <div>App @info.AppVersion @((!string.IsNullOrEmpty(info.Commit) ? $"({info.Commit})" : "")) • .NET @info.RuntimeVersion • @info.ProcessArchitecture</div>
         <div>EF: @info.EFProvider • Mig: @(info.LatestMigration ?? $"{info.AppliedMigrations} applied")</div>
-        <div>SQLite: @(info.SqliteVersion ?? "?") • Env: @info.EnvironmentName • <a href="/status">DB status</a></div>
+        <div>SQLite: @(info.SqliteVersion ?? "?") • Env: @info.EnvironmentName • <a href="/status">DB status</a> • <a href="/versioninfo">Version</a></div>
     </div>
 }
 
