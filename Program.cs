@@ -19,6 +19,9 @@ builder.Services.AddDbContextFactory<AppDbContext>(opt =>
 // Version info provider (singleton, collected once at startup)
 builder.Services.AddSingleton<IVersionInfoProvider, VersionInfoProvider>();
 
+// Status service (scoped)
+builder.Services.AddScoped<IStatusService, StatusService>();
+
 var app = builder.Build();
 
 // Create DB schema if missing and initialize version provider

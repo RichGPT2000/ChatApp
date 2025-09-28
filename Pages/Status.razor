@@ -1,0 +1,48 @@
+@page "/status"
+@using ChatApp.Services
+@using ChatApp.Models
+@inject IStatusService StatusService
+
+<PageTitle>Status</PageTitle>
+
+<h3>Database Status</h3>
+
+@if (_status is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm">
+            <tbody>
+                <tr><th>Database File</th><td>@_status.FilePath</td></tr>
+                <tr><th>Table Count</th><td>@_status.TableCount</td></tr>
+                <tr><th>Total Rows</th><td>@_status.TotalRowCount</td></tr>
+                <tr><th>Generated (UTC)</th><td>@_status.GeneratedAtUtc:O</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h5>Tables</h5>
+    <table class="table table-bordered table-sm w-auto">
+        <thead>
+            <tr><th>Table</th><th>Rows</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var kv in _status.TableRowCounts.OrderBy(k => k.Key))
+            {
+                <tr><td>@kv.Key</td><td>@kv.Value</td></tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private DbStatusInfo? _status;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _status = await StatusService.GetDatabaseStatusAsync();
+    }
+}
